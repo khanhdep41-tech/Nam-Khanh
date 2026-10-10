@@ -1,560 +1,492 @@
 
---========================================================
--- NHẬT KHÁNH HUB | PINK SHADER EDITION
--- Graphics | Chili Hub | Server Hop | Re-execute
---========================================================
+--==================================================
+-- NHẬT KHÁNH HUB | PINK EDITION
+-- Chili Hub Vịt Hổ V3 | Server Hop | Simple Shader
+-- FPS Ultra Boost | Draggable GUI | Floating NK
+--==================================================
 
 local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
-local UIS = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
 local ENV = (getgenv and getgenv()) or _G
+local LocalPlayer = Players.LocalPlayer
 
--- URL
+-- LINKS
 local HUB_URL =
     "https://raw.githubusercontent.com/khanhdep41-tech/Nam-Khanh/refs/heads/main/khanh.lua"
 
 local CHILI_URL =
-    "https://raw.githubusercontent.com/tienkhanh1/Chilli-Hub-script/refs/heads/main/StealAnEgg"
+    "https://apexhubeditor.vercel.app/api/raw?name=6bzPiAYUA0ekyyvhOhxpPobkK643_chilli-hub-vit-ho-v3"
 
 local HOP_URL =
     "https://raw.githubusercontent.com/khanhdep41-tech/chuyen-sv/refs/heads/main/chuyen%20sv.lua"
 
--- DỌN BẢN CŨ
-if ENV.NK_PinkShader_Unload then
-    pcall(ENV.NK_PinkShader_Unload)
+local GRAPHICS_URL =
+    "https://raw.githubusercontent.com/p0e1/1/refs/heads/main/SimpleShader.lua"
+
+-- CLEAN OLD GUI
+if ENV.NK_PinkHub_Unload then
+    pcall(ENV.NK_PinkHub_Unload)
 end
 
-local connections = {}
-local alive = true
+pcall(function()
+    local old = CoreGui:FindFirstChild("NhatKhanhHub")
+    if old then old:Destroy() end
+end)
 
-local function track(c)
-    table.insert(connections, c)
-    return c
+-- COLORS
+local PINK = Color3.fromRGB(255, 105, 180)
+local DARK_PINK = Color3.fromRGB(190, 55, 125)
+local PALE_PINK = Color3.fromRGB(255, 220, 238)
+local WHITE = Color3.fromRGB(255, 255, 255)
+local DARK = Color3.fromRGB(35, 25, 40)
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "NhatKhanhHub"
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local parentOK = pcall(function()
+    gui.Parent = CoreGui
+end)
+
+if not parentOK then
+    gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 end
 
-local function make(className, props, parent)
-    local obj = Instance.new(className)
-    for key, value in pairs(props) do
-        obj[key] = value
-    end
-    obj.Parent = parent
-    return obj
+local function addCorner(obj, radius)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, radius or 10)
+    c.Parent = obj
 end
 
-local function round(obj, radius)
-    make("UICorner", {
-        CornerRadius = UDim.new(0, radius or 10)
-    }, obj)
+local function addStroke(obj)
+    local s = Instance.new("UIStroke")
+    s.Color = PINK
+    s.Thickness = 1.5
+    s.Parent = obj
 end
 
--- MÀU HỒNG PASTEL
-local BG = Color3.fromRGB(35, 24, 38)
-local BG2 = Color3.fromRGB(49, 33, 52)
-local BG3 = Color3.fromRGB(65, 43, 67)
-local PINK = Color3.fromRGB(244, 164, 194)
-local PINK2 = Color3.fromRGB(255, 211, 226)
-local WHITE = Color3.fromRGB(255, 245, 249)
-local MUTED = Color3.fromRGB(211, 185, 201)
+-- MAIN WINDOW
+local main = Instance.new("Frame")
+main.Name = "MainFrame"
+main.Size = UDim2.fromOffset(285, 285)
+main.Position = UDim2.new(0.5, -142, 0.5, -142)
+main.BackgroundColor3 = DARK
+main.BorderSizePixel = 0
+main.Parent = gui
+addCorner(main, 14)
+addStroke(main)
 
--- LƯU ÁNH SÁNG BAN ĐẦU
-local original = {
-    ClockTime = Lighting.ClockTime,
-    Brightness = Lighting.Brightness,
-    Ambient = Lighting.Ambient,
-    OutdoorAmbient = Lighting.OutdoorAmbient,
-    ColorShift_Top = Lighting.ColorShift_Top,
-    ColorShift_Bottom = Lighting.ColorShift_Bottom,
-    GlobalShadows = Lighting.GlobalShadows,
-    FogColor = Lighting.FogColor,
-    FogEnd = Lighting.FogEnd,
-    ExposureCompensation = Lighting.ExposureCompensation,
-}
+-- HEADER
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 43)
+header.BackgroundColor3 = DARK_PINK
+header.BorderSizePixel = 0
+header.Parent = main
+addCorner(header, 12)
 
-local originalEffects = {}
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -78, 1, 0)
+title.Position = UDim2.fromOffset(12, 0)
+title.BackgroundTransparency = 1
+title.Text = "⚡ NHẬT KHÁNH HUB"
+title.TextColor3 = WHITE
+title.TextSize = 15
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = header
 
-for _, obj in ipairs(Lighting:GetChildren()) do
-    if obj:IsA("PostEffect") then
-        originalEffects[obj] = obj.Enabled
-    end
+local minimize = Instance.new("TextButton")
+minimize.Size = UDim2.fromOffset(28, 28)
+minimize.Position = UDim2.new(1, -64, 0, 7)
+minimize.BackgroundColor3 = PALE_PINK
+minimize.Text = "—"
+minimize.TextColor3 = DARK_PINK
+minimize.TextSize = 18
+minimize.Font = Enum.Font.GothamBold
+minimize.Parent = header
+addCorner(minimize, 8)
+
+local close = Instance.new("TextButton")
+close.Size = UDim2.fromOffset(28, 28)
+close.Position = UDim2.new(1, -32, 0, 7)
+close.BackgroundColor3 = Color3.fromRGB(255, 75, 100)
+close.Text = "×"
+close.TextColor3 = WHITE
+close.TextSize = 20
+close.Font = Enum.Font.GothamBold
+close.Parent = header
+addCorner(close, 8)
+
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -20, 0, 22)
+status.Position = UDim2.fromOffset(10, 47)
+status.BackgroundTransparency = 1
+status.Text = "Chọn chức năng bạn muốn sử dụng"
+status.TextColor3 = PALE_PINK
+status.TextSize = 11
+status.Font = Enum.Font.Gotham
+status.Parent = main
+
+-- EXTERNAL SCRIPT LOADER
+local function runExternal(url, label)
+    status.Text = "Đang tải " .. label .. "..."
+
+    task.spawn(function()
+        local ok, err = pcall(function()
+            local response = game:HttpGet(url)
+            assert(type(response) == "string" and #response > 0,
+                "Không nhận được mã script")
+
+            local fn, compileErr = loadstring(response)
+            assert(fn, compileErr or "Không biên dịch được script")
+            fn()
+        end)
+
+        if ok then
+            status.Text = label .. " đã được khởi chạy"
+        else
+            status.Text = "Lỗi tải " .. label
+            warn("[NhatKhanhHub] " .. tostring(err))
+        end
+    end)
 end
 
--- GUI ROOT
-local oldGui = playerGui:FindFirstChild("NhatKhanhPinkShader")
-if oldGui then
-    oldGui:Destroy()
-end
-
-local gui = make("ScreenGui", {
-    Name = "NhatKhanhPinkShader",
-    ResetOnSpawn = false,
-    DisplayOrder = 1000,
-    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-}, playerGui)
-
-local function button(parent, text, position, size, color)
-    local b = make("TextButton", {
-        Position = position,
-        Size = size,
-        BackgroundColor3 = color or BG2,
-        Text = text,
-        TextColor3 = WHITE,
-        TextSize = 13,
-        Font = Enum.Font.GothamBold,
-        AutoButtonColor = true,
-    }, parent)
-
-    round(b, 9)
-
-    make("UIStroke", {
-        Color = PINK,
-        Thickness = 1,
-        Transparency = 0.5,
-    }, b)
-
-    return b
-end
-
--- TỰ CHẠY LẠI SAU TELEPORT
+-- QUEUE RE-EXECUTE AFTER TELEPORT
 local function queueReexecute()
     local queueFn =
-        queue_on_teleport
+        ENV.queue_on_teleport
+        or ENV.queueonteleport
+        or ENV.queueteleport
+        or queue_on_teleport
         or queueonteleport
         or queueteleport
 
     if type(queueFn) ~= "function" then
-        warn("[Nhật Khánh Hub] Executor không hỗ trợ queue-on-teleport.")
+        warn("[NhatKhanhHub] Executor không hỗ trợ queue_on_teleport")
         return false
     end
 
     local code = string.format(
-        'task.wait(3); loadstring(game:HttpGet(%q))()',
+        'task.wait(4); loadstring(game:HttpGet(%q))()',
         HUB_URL
     )
 
     local ok, err = pcall(queueFn, code)
-
     if not ok then
-        warn("[Nhật Khánh Hub] Queue lỗi: " .. tostring(err))
+        warn("[NhatKhanhHub] Queue thất bại: " .. tostring(err))
         return false
     end
 
     return true
 end
 
--- TẢI SCRIPT NGOÀI
-local function runExternal(url, label)
-    task.spawn(function()
-        local ok, err = pcall(function()
-            local source = game:HttpGet(url)
-            assert(type(source) == "string" and #source > 0,
-                "Source rỗng")
+-- BUTTON CREATOR
+local function makeButton(text, y, callback)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, -24, 0, 38)
+    b.Position = UDim2.fromOffset(12, y)
+    b.BackgroundColor3 = PINK
+    b.Text = text
+    b.TextColor3 = WHITE
+    b.TextSize = 12
+    b.Font = Enum.Font.GothamBold
+    b.AutoButtonColor = true
+    b.Parent = main
+    addCorner(b, 9)
 
-            local fn, compileError = loadstring(source)
-            assert(fn, compileError or "Không biên dịch được")
+    b.MouseButton1Click:Connect(callback)
 
-            fn()
-        end)
-
-        if not ok then
-            warn("[Nhật Khánh Hub] " .. label .. ": " .. tostring(err))
-        end
+    b.MouseEnter:Connect(function()
+        TweenService:Create(b, TweenInfo.new(0.12), {
+            BackgroundColor3 = DARK_PINK
+        }):Play()
     end)
-end
 
--- MENU HUB
-local hub = make("Frame", {
-    Name = "MenuHub",
-    Size = UDim2.fromOffset(390, 420),
-    Position = UDim2.new(1, -410, 0.5, -210),
-    BackgroundColor3 = BG,
-    BorderSizePixel = 0,
-    Active = true,
-}, gui)
-
-round(hub, 16)
-
-make("UIStroke", {
-    Color = PINK,
-    Thickness = 2,
-}, hub)
-
-local hubTitle = make("Frame", {
-    Size = UDim2.new(1, 0, 0, 48),
-    BackgroundColor3 = BG2,
-    Active = true,
-}, hub)
-
-round(hubTitle, 15)
-
-make("TextLabel", {
-    Size = UDim2.new(1, -105, 1, 0),
-    Position = UDim2.fromOffset(12, 0),
-    BackgroundTransparency = 1,
-    Text = "♡ Nhật Khánh Hub",
-    TextColor3 = WHITE,
-    TextSize = 16,
-    Font = Enum.Font.GothamBold,
-    TextXAlignment = Enum.TextXAlignment.Left,
-}, hubTitle)
-
-local hideHub = button(
-    hubTitle, "−",
-    UDim2.new(1, -72, 0, 9),
-    UDim2.fromOffset(29, 29)
-)
-
-local closeHub = button(
-    hubTitle, "×",
-    UDim2.new(1, -37, 0, 9),
-    UDim2.fromOffset(29, 29)
-)
-
-local hubContent = make("ScrollingFrame", {
-    Size = UDim2.new(1, -20, 1, -65),
-    Position = UDim2.fromOffset(10, 57),
-    BackgroundTransparency = 1,
-    BorderSizePixel = 0,
-    ScrollBarThickness = 3,
-    ScrollBarImageColor3 = PINK,
-    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-    CanvasSize = UDim2.new(0, 0, 0, 0),
-}, hub)
-
-make("UIListLayout", {
-    Padding = UDim.new(0, 8),
-    SortOrder = Enum.SortOrder.LayoutOrder,
-}, hubContent)
-
-local function addHubButton(label, callback)
-    local b = button(
-        hubContent,
-        "   " .. label .. "   ›",
-        UDim2.new(),
-        UDim2.new(1, -5, 0, 43)
-    )
-
-    b.TextXAlignment = Enum.TextXAlignment.Left
-
-    track(b.Activated:Connect(function()
-        if alive then
-            callback()
-        end
-    end))
+    b.MouseLeave:Connect(function()
+        TweenService:Create(b, TweenInfo.new(0.12), {
+            BackgroundColor3 = PINK
+        }):Play()
+    end)
 
     return b
 end
 
--- MENU ĐỒ HỌA
-local shader = make("Frame", {
-    Name = "MenuDoHoa",
-    Size = UDim2.fromOffset(270, 370),
-    Position = UDim2.new(0, 18, 0.5, -185),
-    BackgroundColor3 = BG,
-    BorderSizePixel = 0,
-    Active = true,
-}, gui)
-
-round(shader, 14)
-
-make("UIStroke", {
-    Color = PINK,
-    Thickness = 2,
-}, shader)
-
-local shaderTitle = make("Frame", {
-    Size = UDim2.new(1, 0, 0, 48),
-    BackgroundColor3 = BG2,
-    Active = true,
-}, shader)
-
-round(shaderTitle, 13)
-
-make("TextLabel", {
-    Size = UDim2.new(1, -80, 1, 0),
-    Position = UDim2.fromOffset(12, 0),
-    BackgroundTransparency = 1,
-    Text = "♡ ĐỒ HỌA",
-    TextColor3 = PINK2,
-    TextSize = 15,
-    Font = Enum.Font.GothamBold,
-    TextXAlignment = Enum.TextXAlignment.Left,
-}, shaderTitle)
-
-local hideShader = button(
-    shaderTitle, "−",
-    UDim2.new(1, -68, 0, 9),
-    UDim2.fromOffset(29, 29)
-)
-
-local closeShader = button(
-    shaderTitle, "×",
-    UDim2.new(1, -34, 0, 9),
-    UDim2.fromOffset(29, 29)
-)
-
-make("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 24),
-    Position = UDim2.fromOffset(10, 52),
-    BackgroundTransparency = 1,
-    Text = "CHỌN CHẾ ĐỘ ÁNH SÁNG",
-    TextColor3 = MUTED,
-    TextSize = 10,
-    Font = Enum.Font.GothamBold,
-}, shader)
-
-local modes = make("ScrollingFrame", {
-    Size = UDim2.new(1, -18, 1, -88),
-    Position = UDim2.fromOffset(9, 80),
-    BackgroundTransparency = 1,
-    BorderSizePixel = 0,
-    ScrollBarThickness = 3,
-    ScrollBarImageColor3 = PINK,
-    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-    CanvasSize = UDim2.new(0, 0, 0, 0),
-}, shader)
-
-make("UIListLayout", {
-    Padding = UDim.new(0, 7),
-    SortOrder = Enum.SortOrder.LayoutOrder,
-}, modes)
-
-make("UIPadding", {
-    PaddingBottom = UDim.new(0, 6),
-    PaddingRight = UDim.new(0, 4),
-}, modes)
-
-local presets = {
-    {
-        name = "Ban ngày",
-        time = 14,
-        brightness = 2,
-        ambient = Color3.fromRGB(150, 150, 150),
-        outdoor = Color3.fromRGB(180, 180, 180),
-        fog = Color3.fromRGB(200, 220, 255),
-    },
-    {
-        name = "Hoàng hôn",
-        time = 17.8,
-        brightness = 2,
-        ambient = Color3.fromRGB(150, 100, 100),
-        outdoor = Color3.fromRGB(210, 125, 100),
-        fog = Color3.fromRGB(255, 170, 130),
-    },
-    {
-        name = "Ban đêm",
-        time = 0,
-        brightness = 1,
-        ambient = Color3.fromRGB(45, 50, 90),
-        outdoor = Color3.fromRGB(35, 40, 75),
-        fog = Color3.fromRGB(35, 45, 80),
-    },
-    {
-        name = "Nhiều mây",
-        time = 12,
-        brightness = 1.5,
-        ambient = Color3.fromRGB(125, 125, 135),
-        outdoor = Color3.fromRGB(145, 145, 155),
-        fog = Color3.fromRGB(165, 170, 180),
-    },
-    {
-        name = "Bờ biển",
-        time = 13,
-        brightness = 2,
-        ambient = Color3.fromRGB(130, 175, 190),
-        outdoor = Color3.fromRGB(165, 205, 220),
-        fog = Color3.fromRGB(140, 210, 235),
-    },
-}
-
-local function applyPreset(preset)
-    Lighting.ClockTime = preset.time
-    Lighting.Brightness = preset.brightness
-    Lighting.Ambient = preset.ambient
-    Lighting.OutdoorAmbient = preset.outdoor
-    Lighting.FogColor = preset.fog
-    Lighting.FogEnd = 100000
-end
-
-for _, preset in ipairs(presets) do
-    local b = button(
-        modes,
-        preset.name,
-        UDim2.new(),
-        UDim2.new(1, -5, 0, 43)
-    )
-
-    track(b.Activated:Connect(function()
-        applyPreset(preset)
-
-        for _, child in ipairs(modes:GetChildren()) do
-            if child:IsA("TextButton") then
-                child.BackgroundColor3 = BG2
-                child.TextColor3 = WHITE
-            end
-        end
-
-        b.BackgroundColor3 = PINK
-        b.TextColor3 = BG
-    end))
-end
-
-local restore = button(
-    modes,
-    "Khôi phục mặc định",
-    UDim2.new(),
-    UDim2.new(1, -5, 0, 43)
-)
-
-track(restore.Activated:Connect(function()
-    for key, value in pairs(original) do
-        pcall(function()
-            Lighting[key] = value
-        end)
-    end
-
-    for object, enabled in pairs(originalEffects) do
-        pcall(function()
-            if object.Parent then
-                object.Enabled = enabled
-            end
-        end)
-    end
-
-    for _, child in ipairs(modes:GetChildren()) do
-        if child:IsA("TextButton") then
-            child.BackgroundColor3 = BG2
-            child.TextColor3 = WHITE
-        end
-    end
-end))
-
--- NÚT NỔI NK
-local floating = button(
-    gui,
-    "NK",
-    UDim2.new(0, 15, 0.5, -25),
-    UDim2.fromOffset(50, 50),
-    PINK
-)
-
-floating.TextColor3 = BG
-floating.TextSize = 17
-floating.Visible = false
-round(floating, 25)
-
--- HUB BUTTONS
-addHubButton("Hiệu ứng đồ họa", function()
-    shader.Visible = true
-end)
-
-addHubButton("Chili Hub", function()
+-- CHILI HUB
+makeButton("🔥  Chili Hub Vịt Hổ V3", 75, function()
     runExternal(CHILI_URL, "Chili Hub")
 end)
 
-addHubButton("Chuyển máy chủ", function()
-    -- Xếp hàng tải lại trước khi gọi script chuyển server.
+-- SERVER HOP
+makeButton("🌐  Chuyển máy chủ", 119, function()
     queueReexecute()
     runExternal(HOP_URL, "Chuyển máy chủ")
 end)
 
--- ẨN / HIỆN MENU
-local function hideAll()
-    hub.Visible = false
-    shader.Visible = false
-    floating.Visible = true
-end
+-- ORIGINAL GRAPHICS SCRIPT
+makeButton("🌈  Load Script Đồ Họa", 163, function()
+    runExternal(GRAPHICS_URL, "Script đồ họa")
+end)
 
-local function showAll()
-    hub.Visible = true
-    shader.Visible = true
-    floating.Visible = false
-end
+-- FPS ULTRA BOOST
+local fpsEnabled = false
+local saved = {
+    parts = {},
+    lighting = {},
+    effects = {},
+    terrainDecoration = nil,
+    quality = nil
+}
 
-track(hideHub.Activated:Connect(hideAll))
-track(hideShader.Activated:Connect(hideAll))
-track(floating.Activated:Connect(showAll))
-
-track(closeHub.Activated:Connect(function()
-    hub.Visible = false
-    if not shader.Visible then
-        floating.Visible = true
-    end
-end))
-
-track(closeShader.Activated:Connect(function()
-    shader.Visible = false
-    if not hub.Visible then
-        floating.Visible = true
-    end
-end))
-
--- KÉO THẢ MENU
-local function makeDraggable(frame, handle)
-    local dragging = false
-    local startPosition
-    local startPointer
-
-    track(handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            startPosition = frame.Position
-            startPointer = input.Position
-        end
-    end))
-
-    track(UIS.InputChanged:Connect(function(input)
-        if dragging and (
-            input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch
-        ) then
-            local delta = input.Position - startPointer
-
-            frame.Position = UDim2.new(
-                startPosition.X.Scale,
-                startPosition.X.Offset + delta.X,
-                startPosition.Y.Scale,
-                startPosition.Y.Offset + delta.Y
-            )
-        end
-    end))
-
-    track(UIS.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end))
-end
-
-makeDraggable(hub, hubTitle)
-makeDraggable(shader, shaderTitle)
-
--- DỌN KẾT NỐI
-local function unload()
-    if not alive then return end
-    alive = false
-
-    for _, connection in ipairs(connections) do
-        pcall(function()
-            connection:Disconnect()
+local function saveLightingProperty(property)
+    if saved.lighting[property] == nil then
+        local ok, value = pcall(function()
+            return Lighting[property]
         end)
+        if ok then
+            saved.lighting[property] = value
+        end
+    end
+end
+
+local function saveAndDisableEffect(obj)
+    if obj:IsA("PostEffect") or obj:IsA("ParticleEmitter")
+        or obj:IsA("Trail") or obj:IsA("Beam")
+        or obj:IsA("Fire") or obj:IsA("Smoke")
+        or obj:IsA("Sparkles") or obj:IsA("Clouds") then
+
+        if saved.effects[obj] == nil then
+            saved.effects[obj] = obj.Enabled
+        end
+
+        pcall(function()
+            obj.Enabled = false
+        end)
+    elseif obj:IsA("Atmosphere") then
+        if saved.effects[obj] == nil then
+            saved.effects[obj] = {
+                Density = obj.Density,
+                Haze = obj.Haze,
+                Glare = obj.Glare
+            }
+        end
+
+        pcall(function()
+            obj.Density = 0
+            obj.Haze = 0
+            obj.Glare = 0
+        end)
+    end
+end
+
+local function enableFPSBoost()
+    saveLightingProperty("GlobalShadows")
+    saveLightingProperty("FogEnd")
+    saveLightingProperty("EnvironmentDiffuseScale")
+    saveLightingProperty("EnvironmentSpecularScale")
+
+    saved.terrainDecoration = Workspace.Terrain.Decoration
+
+    pcall(function()
+        saved.quality = settings().Rendering.QualityLevel
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    end)
+
+    Lighting.GlobalShadows = false
+    Lighting.FogEnd = 100000
+    Lighting.EnvironmentDiffuseScale = 0
+    Lighting.EnvironmentSpecularScale = 0
+
+    for _, obj in ipairs(Lighting:GetDescendants()) do
+        saveAndDisableEffect(obj)
+    end
+
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            if saved.parts[obj] == nil then
+                saved.parts[obj] = {
+                    Material = obj.Material,
+                    Reflectance = obj.Reflectance
+                }
+            end
+
+            pcall(function()
+                obj.Material = Enum.Material.SmoothPlastic
+                obj.Reflectance = 0
+            end)
+        else
+            saveAndDisableEffect(obj)
+        end
+    end
+
+    pcall(function()
+        Workspace.Terrain.Decoration = false
+    end)
+end
+
+local function disableFPSBoost()
+    for property, value in pairs(saved.lighting) do
+        pcall(function()
+            Lighting[property] = value
+        end)
+    end
+
+    for obj, old in pairs(saved.parts) do
+        if obj and obj.Parent then
+            pcall(function()
+                obj.Material = old.Material
+                obj.Reflectance = old.Reflectance
+            end)
+        end
+    end
+
+    for obj, old in pairs(saved.effects) do
+        if obj and obj.Parent then
+            pcall(function()
+                if type(old) == "table" then
+                    obj.Density = old.Density
+                    obj.Haze = old.Haze
+                    obj.Glare = old.Glare
+                else
+                    obj.Enabled = old
+                end
+            end)
+        end
+    end
+
+    if saved.terrainDecoration ~= nil then
+        pcall(function()
+            Workspace.Terrain.Decoration = saved.terrainDecoration
+        end)
+    end
+
+    if saved.quality ~= nil then
+        pcall(function()
+            settings().Rendering.QualityLevel = saved.quality
+        end)
+    end
+
+    saved.parts = {}
+    saved.effects = {}
+    saved.lighting = {}
+    saved.terrainDecoration = nil
+    saved.quality = nil
+end
+
+local fpsButton = makeButton("🚀  FPS ULTRA BOOST: OFF", 207, function()
+    fpsEnabled = not fpsEnabled
+
+    if fpsEnabled then
+        local ok, err = pcall(enableFPSBoost)
+
+        if ok then
+            fpsButton.Text = "🚀  FPS ULTRA BOOST: ON"
+            status.Text = "Đã bật giảm hiệu ứng đồ họa"
+        else
+            fpsEnabled = false
+            status.Text = "Không bật được FPS Boost"
+            warn("[NhatKhanhHub] FPS Boost: " .. tostring(err))
+        end
+    else
+        local ok, err = pcall(disableFPSBoost)
+
+        fpsButton.Text = "🚀  FPS ULTRA BOOST: OFF"
+        status.Text = ok and "Đã khôi phục thiết lập đã lưu"
+            or "Có lỗi khi khôi phục đồ họa"
+
+        if not ok then
+            warn("[NhatKhanhHub] Restore: " .. tostring(err))
+        end
+    end
+end)
+
+-- DRAG WINDOW
+local dragging = false
+local dragInput
+local dragStart
+local startPosition
+
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+
+        dragging = true
+        dragStart = input.Position
+        startPosition = main.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+header.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        local delta = input.Position - dragStart
+
+        main.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- FLOATING NK ICON
+local floating = Instance.new("TextButton")
+floating.Name = "NKFloating"
+floating.Size = UDim2.fromOffset(48, 48)
+floating.Position = UDim2.new(0, 18, 0.45, 0)
+floating.BackgroundColor3 = DARK_PINK
+floating.Text = "NK"
+floating.TextColor3 = WHITE
+floating.TextSize = 17
+floating.Font = Enum.Font.GothamBold
+floating.Visible = false
+floating.Parent = gui
+addCorner(floating, 24)
+addStroke(floating)
+
+floating.MouseButton1Click:Connect(function()
+    main.Visible = true
+    floating.Visible = false
+end)
+
+minimize.MouseButton1Click:Connect(function()
+    main.Visible = false
+    floating.Visible = true
+end)
+
+-- CLEANUP
+local function unload()
+    if fpsEnabled then
+        pcall(disableFPSBoost)
     end
 
     pcall(function()
         gui:Destroy()
     end)
 
-    ENV.NK_PinkShader_Unload = nil
+    ENV.NK_PinkHub_Unload = nil
 end
 
-track(closeHub.Activated:Connect(unload))
-track(closeShader.Activated:Connect(unload))
+close.MouseButton1Click:Connect(unload)
+ENV.NK_PinkHub_Unload = unload
 
-ENV.NK_PinkShader_Unload = unload
-
-print("[Nhật Khánh Hub] Đã khởi chạy.")
+print("[NhatKhanhHub] Loaded successfully")
