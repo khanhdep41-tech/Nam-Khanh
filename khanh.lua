@@ -1,44 +1,39 @@
 
---==================================================
--- NHẬT KHÁNH HUB - STEAL AN EGG
--- Giao diện hồng pastel | Tiếng Việt
--- Kéo thả | Thu nhỏ | Nút nổi | Hai tab
---==================================================
+--========================================================
+-- NHẬT KHÁNH HUB | PINK SHADER EDITION
+-- Graphics | Chili Hub | Server Hop | Re-execute
+--========================================================
 
 local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
 local UIS = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
-local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
 
-local LP = Players.LocalPlayer
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 local ENV = (getgenv and getgenv()) or _G
 
-if ENV.NhatKhanhHubUnload then
-    pcall(ENV.NhatKhanhHubUnload)
+-- URL
+local HUB_URL =
+    "https://raw.githubusercontent.com/khanhdep41-tech/Nam-Khanh/refs/heads/main/khanh.lua"
+
+local CHILI_URL =
+    "https://raw.githubusercontent.com/tienkhanh1/Chilli-Hub-script/refs/heads/main/StealAnEgg"
+
+local HOP_URL =
+    "https://raw.githubusercontent.com/khanhdep41-tech/chuyen-sv/refs/heads/main/chuyen%20sv.lua"
+
+-- DỌN BẢN CŨ
+if ENV.NK_PinkShader_Unload then
+    pcall(ENV.NK_PinkShader_Unload)
 end
 
---==================== MÀU SẮC ====================
+local connections = {}
+local alive = true
 
-local BG      = Color3.fromRGB(30, 22, 32)
-local BG2     = Color3.fromRGB(43, 31, 46)
-local BG3     = Color3.fromRGB(59, 41, 62)
-local PINK    = Color3.fromRGB(244, 164, 194)
-local PINK2   = Color3.fromRGB(255, 205, 220)
-local TEXT    = Color3.fromRGB(255, 243, 248)
-local MUTED   = Color3.fromRGB(205, 180, 195)
-local RED     = Color3.fromRGB(255, 105, 130)
-
-local QUICK = TweenInfo.new(
-    0.18,
-    Enum.EasingStyle.Quad,
-    Enum.EasingDirection.Out
-)
-
-local Connections = {}
-local function track(connection)
-    table.insert(Connections, connection)
-    return connection
+local function track(c)
+    table.insert(connections, c)
+    return c
 end
 
 local function make(className, props, parent)
@@ -52,578 +47,463 @@ end
 
 local function round(obj, radius)
     make("UICorner", {
-        CornerRadius = UDim.new(0, radius or 8)
+        CornerRadius = UDim.new(0, radius or 10)
     }, obj)
 end
 
-local function animate(obj, info, props)
-    local tw = TweenService:Create(obj, info, props)
-    tw:Play()
-    return tw
+-- MÀU HỒNG PASTEL
+local BG = Color3.fromRGB(35, 24, 38)
+local BG2 = Color3.fromRGB(49, 33, 52)
+local BG3 = Color3.fromRGB(65, 43, 67)
+local PINK = Color3.fromRGB(244, 164, 194)
+local PINK2 = Color3.fromRGB(255, 211, 226)
+local WHITE = Color3.fromRGB(255, 245, 249)
+local MUTED = Color3.fromRGB(211, 185, 201)
+
+-- LƯU ÁNH SÁNG BAN ĐẦU
+local original = {
+    ClockTime = Lighting.ClockTime,
+    Brightness = Lighting.Brightness,
+    Ambient = Lighting.Ambient,
+    OutdoorAmbient = Lighting.OutdoorAmbient,
+    ColorShift_Top = Lighting.ColorShift_Top,
+    ColorShift_Bottom = Lighting.ColorShift_Bottom,
+    GlobalShadows = Lighting.GlobalShadows,
+    FogColor = Lighting.FogColor,
+    FogEnd = Lighting.FogEnd,
+    ExposureCompensation = Lighting.ExposureCompensation,
+}
+
+local originalEffects = {}
+
+for _, obj in ipairs(Lighting:GetChildren()) do
+    if obj:IsA("PostEffect") then
+        originalEffects[obj] = obj.Enabled
+    end
 end
 
---==================== GUI ROOT ====================
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "NhatKhanhHub"
-gui.ResetOnSpawn = false
-gui.DisplayOrder = 999
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-local parented = false
-
-if gethui then
-    parented = pcall(function()
-        gui.Parent = gethui()
-    end)
+-- GUI ROOT
+local oldGui = playerGui:FindFirstChild("NhatKhanhPinkShader")
+if oldGui then
+    oldGui:Destroy()
 end
 
-if not parented or not gui.Parent then
-    parented = pcall(function()
-        gui.Parent = CoreGui
-    end)
-end
+local gui = make("ScreenGui", {
+    Name = "NhatKhanhPinkShader",
+    ResetOnSpawn = false,
+    DisplayOrder = 1000,
+    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+}, playerGui)
 
-if not parented or not gui.Parent then
-    gui.Parent = LP:WaitForChild("PlayerGui")
-end
-
---==================== THÔNG BÁO ====================
-
-local popupHolder = make("Frame", {
-    Name = "ThongBao",
-    Size = UDim2.new(1, 0, 1, 0),
-    BackgroundTransparency = 1,
-    ZIndex = 100,
-}, gui)
-
-make("UIListLayout", {
-    HorizontalAlignment = Enum.HorizontalAlignment.Center,
-    VerticalAlignment = Enum.VerticalAlignment.Top,
-    Padding = UDim.new(0, 8),
-}, popupHolder)
-
-make("UIPadding", {
-    PaddingTop = UDim.new(0, 12),
-}, popupHolder)
-
-local function notify(title, message, duration, isError)
-    local color = isError and RED or PINK
-
-    local card = make("Frame", {
-        Size = UDim2.new(0, 290, 0, 66),
-        BackgroundColor3 = BG2,
-        BackgroundTransparency = 0.05,
-        ZIndex = 100,
-    }, popupHolder)
-
-    round(card, 10)
-
-    make("UIStroke", {
-        Color = color,
-        Thickness = 1.5,
-    }, card)
-
-    make("TextLabel", {
-        Size = UDim2.new(1, -20, 0, 24),
-        Position = UDim2.new(0, 10, 0, 7),
-        BackgroundTransparency = 1,
-        Text = title,
-        TextColor3 = color,
+local function button(parent, text, position, size, color)
+    local b = make("TextButton", {
+        Position = position,
+        Size = size,
+        BackgroundColor3 = color or BG2,
+        Text = text,
+        TextColor3 = WHITE,
+        TextSize = 13,
         Font = Enum.Font.GothamBold,
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 101,
-    }, card)
-
-    make("TextLabel", {
-        Size = UDim2.new(1, -20, 0, 28),
-        Position = UDim2.new(0, 10, 0, 32),
-        BackgroundTransparency = 1,
-        Text = message,
-        TextColor3 = TEXT,
-        Font = Enum.Font.Gotham,
-        TextSize = 12,
-        TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 101,
-    }, card)
-
-    task.delay(duration or 3, function()
-        if card.Parent then
-            animate(card, QUICK, {
-                BackgroundTransparency = 1
-            })
-            task.wait(0.2)
-            if card.Parent then
-                card:Destroy()
-            end
-        end
-    end)
-end
-
---==================== CỬA SỔ CHÍNH ====================
-
-local function getSize()
-    local camera = Workspace.CurrentCamera
-    local viewport = camera and camera.ViewportSize
-        or Vector2.new(400, 700)
-
-    return math.clamp(viewport.X - 24, 290, 460),
-           math.clamp(viewport.Y - 80, 350, 520)
-end
-
-local W, H = getSize()
-
-local main = make("Frame", {
-    Name = "CuaSoChinh",
-    Size = UDim2.new(0, W, 0, H),
-    Position = UDim2.new(0.5, -W / 2, 0.5, -H / 2),
-    BackgroundColor3 = BG,
-    BorderSizePixel = 0,
-    Active = true,
-    ClipsDescendants = true,
-}, gui)
-
-round(main, 14)
-
-local mainStroke = make("UIStroke", {
-    Color = PINK,
-    Thickness = 2,
-}, main)
-
--- Thanh tiêu đề
-local titleBar = make("Frame", {
-    Size = UDim2.new(1, 0, 0, 46),
-    BackgroundColor3 = BG2,
-    BorderSizePixel = 0,
-}, main)
-
-round(titleBar, 14)
-
-make("Frame", {
-    Size = UDim2.new(1, 0, 0, 14),
-    Position = UDim2.new(0, 0, 1, -14),
-    BackgroundColor3 = BG2,
-    BorderSizePixel = 0,
-}, titleBar)
-
-local logo = make("Frame", {
-    Size = UDim2.new(0, 30, 0, 30),
-    Position = UDim2.new(0, 9, 0.5, -15),
-    BackgroundColor3 = PINK,
-}, titleBar)
-
-round(logo, 9)
-
-make("TextLabel", {
-    Size = UDim2.new(1, 0, 1, 0),
-    BackgroundTransparency = 1,
-    Text = "NK",
-    TextColor3 = BG,
-    TextSize = 14,
-    Font = Enum.Font.GothamBlack,
-}, logo)
-
-make("TextLabel", {
-    Size = UDim2.new(1, -125, 1, 0),
-    Position = UDim2.new(0, 47, 0, 0),
-    BackgroundTransparency = 1,
-    Text = "Nhật Khánh Hub",
-    TextColor3 = TEXT,
-    TextSize = 15,
-    Font = Enum.Font.GothamBold,
-    TextXAlignment = Enum.TextXAlignment.Left,
-    TextTruncate = Enum.TextTruncate.AtEnd,
-}, titleBar)
-
-local function topButton(label, offset)
-    local button = make("TextButton", {
-        Size = UDim2.new(0, 30, 0, 30),
-        Position = UDim2.new(1, offset, 0, 8),
-        BackgroundColor3 = BG3,
-        Text = label,
-        TextColor3 = TEXT,
-        TextSize = 15,
-        Font = Enum.Font.GothamBold,
-        AutoButtonColor = false,
-    }, titleBar)
-
-    round(button, 8)
-
-    track(button.MouseEnter:Connect(function()
-        animate(button, QUICK, {
-            BackgroundColor3 = PINK
-        })
-    end))
-
-    track(button.MouseLeave:Connect(function()
-        animate(button, QUICK, {
-            BackgroundColor3 = BG3
-        })
-    end))
-
-    return button
-end
-
-local minButton = topButton("−", -72)
-local closeButton = topButton("×", -36)
-
---==================== KÉO THẢ CỬA SỔ ====================
-
-do
-    local dragging = false
-    local dragStart
-    local startPosition
-
-    track(titleBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPosition = main.Position
-
-            local connection
-            connection = input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                    connection:Disconnect()
-                end
-            end)
-        end
-    end))
-
-    track(UIS.InputChanged:Connect(function(input)
-        if dragging and (
-            input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch
-        ) then
-            local delta = input.Position - dragStart
-
-            main.Position = UDim2.new(
-                startPosition.X.Scale,
-                startPosition.X.Offset + delta.X,
-                startPosition.Y.Scale,
-                startPosition.Y.Offset + delta.Y
-            )
-        end
-    end))
-end
-
---==================== TAB ====================
-
-local tabBar = make("Frame", {
-    Size = UDim2.new(1, -16, 0, 36),
-    Position = UDim2.new(0, 8, 0, 52),
-    BackgroundColor3 = BG2,
-}, main)
-
-round(tabBar, 9)
-
-local tabArea = make("Frame", {
-    Size = UDim2.new(1, -6, 1, -6),
-    Position = UDim2.new(0, 3, 0, 3),
-    BackgroundTransparency = 1,
-}, tabBar)
-
-local selector = make("Frame", {
-    Size = UDim2.new(0.5, -2, 1, 0),
-    BackgroundColor3 = PINK,
-    ZIndex = 1,
-}, tabArea)
-
-round(selector, 7)
-
-local content = make("Frame", {
-    Size = UDim2.new(1, -16, 1, -98),
-    Position = UDim2.new(0, 8, 0, 94),
-    BackgroundTransparency = 1,
-}, main)
-
-local tabs = {}
-local tabButtons = {}
-local currentTab
-
-local function addTab(name, index)
-    local button = make("TextButton", {
-        Size = UDim2.new(0.5, -2, 1, 0),
-        Position = index == 1
-            and UDim2.new(0, 0, 0, 0)
-            or UDim2.new(0.5, 2, 0, 0),
-        BackgroundTransparency = 1,
-        Text = name,
-        TextColor3 = TEXT,
-        TextSize = 12,
-        Font = Enum.Font.GothamBold,
-        ZIndex = 2,
-    }, tabArea)
-
-    local frame = make("ScrollingFrame", {
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        ScrollBarThickness = 3,
-        ScrollBarImageColor3 = PINK,
-        AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        CanvasSize = UDim2.new(0, 0, 0, 0),
-        Visible = false,
-    }, content)
-
-    make("UIListLayout", {
-        Padding = UDim.new(0, 8),
-        SortOrder = Enum.SortOrder.LayoutOrder,
-    }, frame)
-
-    make("UIPadding", {
-        PaddingBottom = UDim.new(0, 5),
-        PaddingRight = UDim.new(0, 5),
-    }, frame)
-
-    tabs[name] = frame
-    tabButtons[name] = button
-
-    track(button.Activated:Connect(function()
-        if currentTab == name then return end
-
-        currentTab = name
-
-        for tabName, tabFrame in pairs(tabs) do
-            tabFrame.Visible = tabName == name
-        end
-
-        for tabName, tabButton in pairs(tabButtons) do
-            tabButton.TextColor3 =
-                tabName == name and BG or TEXT
-        end
-
-        animate(selector, QUICK, {
-            Position = button.Position,
-            Size = button.Size,
-        })
-    end))
-
-    return frame
-end
-
---==================== NÚT HUB ====================
-
-local function addHubButton(parent, label, url)
-    local button = make("TextButton", {
-        Size = UDim2.new(1, 0, 0, 42),
-        BackgroundColor3 = BG2,
-        Text = "",
-        AutoButtonColor = false,
+        AutoButtonColor = true,
     }, parent)
 
-    round(button, 9)
+    round(b, 9)
 
-    local stroke = make("UIStroke", {
+    make("UIStroke", {
         Color = PINK,
         Thickness = 1,
         Transparency = 0.5,
-    }, button)
+    }, b)
 
-    make("TextLabel", {
-        Size = UDim2.new(1, -40, 1, 0),
-        Position = UDim2.new(0, 12, 0, 0),
-        BackgroundTransparency = 1,
-        Text = label,
-        TextColor3 = TEXT,
-        TextSize = 13,
-        Font = Enum.Font.GothamBold,
-        TextXAlignment = Enum.TextXAlignment.Left,
-    }, button)
-
-    make("TextLabel", {
-        Size = UDim2.new(0, 24, 1, 0),
-        Position = UDim2.new(1, -30, 0, 0),
-        BackgroundTransparency = 1,
-        Text = "›",
-        TextColor3 = PINK2,
-        TextSize = 22,
-        Font = Enum.Font.GothamBold,
-    }, button)
-
-    track(button.MouseEnter:Connect(function()
-        animate(button, QUICK, {
-            BackgroundColor3 = BG3
-        })
-        stroke.Transparency = 0
-    end))
-
-    track(button.MouseLeave:Connect(function()
-        animate(button, QUICK, {
-            BackgroundColor3 = BG2
-        })
-        stroke.Transparency = 0.5
-    end))
-
-    track(button.Activated:Connect(function()
-        notify("Nhật Khánh Hub", "Đang tải: " .. label, 3)
-
-        task.spawn(function()
-            local ok, err = pcall(function()
-                local source = game:HttpGet(url)
-                local fn = loadstring(source)
-
-                assert(fn, "Không biên dịch được source")
-                fn()
-            end)
-
-            if not ok then
-                notify(
-                    "Không thể chạy " .. label,
-                    tostring(err),
-                    5,
-                    true
-                )
-            end
-        end)
-    end))
-
-    return button
+    return b
 end
 
---==================== DANH SÁCH HUB ====================
+-- TỰ CHẠY LẠI SAU TELEPORT
+local function queueReexecute()
+    local queueFn =
+        queue_on_teleport
+        or queueonteleport
+        or queueteleport
 
-local keyless = addTab("Không cần key", 1)
-local keyTab = addTab("Có key", 2)
+    if type(queueFn) ~= "function" then
+        warn("[Nhật Khánh Hub] Executor không hỗ trợ queue-on-teleport.")
+        return false
+    end
 
--- Tab không cần key
-addHubButton(
-    keyless,
-    "Hiệu ứng đồ họa",
-    "https://raw.githubusercontent.com/robloxscripts2026/simple-shader/refs/heads/main/lua"
-)
+    local code = string.format(
+        'task.wait(3); loadstring(game:HttpGet(%q))()',
+        HUB_URL
+    )
 
-addHubButton(
-    keyless,
-    "Miranda Hub",
-    "https://raw.githubusercontent.com/miirandahub/loader/refs/heads/main/afkk"
-)
+    local ok, err = pcall(queueFn, code)
 
-addHubButton(
-    keyless,
-    "Pulse Hub",
-    "https://raw.githubusercontent.com/PulseZax/Loader/refs/heads/main/.lua"
-)
+    if not ok then
+        warn("[Nhật Khánh Hub] Queue lỗi: " .. tostring(err))
+        return false
+    end
 
-addHubButton(
-    keyless,
-    "Lennon Hub",
-    "https://raw.githubusercontent.com/lennonxscripts/lennonhubv4/refs/heads/main/stealanegg"
-)
+    return true
+end
 
-addHubButton(
-    keyless,
-    "Sena Hub",
-    "https://raw.githubusercontent.com/ronnei/Ronnie.HTK/refs/heads/main/solixhub-keyless.lua"
-)
+-- TẢI SCRIPT NGOÀI
+local function runExternal(url, label)
+    task.spawn(function()
+        local ok, err = pcall(function()
+            local source = game:HttpGet(url)
+            assert(type(source) == "string" and #source > 0,
+                "Source rỗng")
 
-addHubButton(
-    keyless,
-    "Chili Hub",
-    "https://raw.githubusercontent.com/tienkhanh1/Chilli-Hub-script/refs/heads/main/StealAnEgg"
-)
+            local fn, compileError = loadstring(source)
+            assert(fn, compileError or "Không biên dịch được")
 
-addHubButton(
-    keyless,
-    "Yokudo Hub",
-    "https://raw.githubusercontent.com/ahchlon/stealanegg/refs/heads/main/Loader.lua"
-)
+            fn()
+        end)
 
-addHubButton(
-    keyless,
-    "Chuyển máy chủ",
-    "https://raw.githubusercontent.com/RealBatu20/AI-Scripts-2025/refs/heads/main/LowServerFinderGUI.lua"
-)
+        if not ok then
+            warn("[Nhật Khánh Hub] " .. label .. ": " .. tostring(err))
+        end
+    end)
+end
 
-addHubButton(
-    keyless,
-    "Chuyển máy chủ V2",
-    "https://pastefy.app/YoZocJ8O/raw"
-)
-
--- Tab có key
-addHubButton(
-    keyTab,
-    "Cộng đồng Fyy",
-    "https://FyyCommunity.com"
-)
-
-addHubButton(
-    keyTab,
-    "Tsuo Hub",
-    "https://raw.githubusercontent.com/Tsuo7/TsuoHub/main/stealanegg"
-)
-
-addHubButton(
-    keyTab,
-    "Limbo Hub",
-    "https://limbohub.my.id/loader.lua"
-)
-
-addHubButton(
-    keyTab,
-    "Vortex Hub",
-    "https://raw.githubusercontent.com/Israel-Vortex/vortex-x-scripts/refs/heads/main/Official-Vortex-Software/Dev-Project/StealAnEgg.lua"
-)
-
-addHubButton(
-    keyTab,
-    "Neo Hub",
-    "https://raw.githubusercontent.com/noehubdev/script/main/scrpit"
-)
-
--- Chọn tab đầu tiên
-currentTab = "Không cần key"
-tabs[currentTab].Visible = true
-tabButtons[currentTab].TextColor3 = BG
-
---==================== NÚT NỔI ====================
-
-local floating = make("TextButton", {
-    Name = "NutNoi",
-    Size = UDim2.new(0, 50, 0, 50),
-    Position = UDim2.new(0, 14, 0.5, -25),
-    BackgroundColor3 = PINK,
-    Text = "NK",
-    TextColor3 = BG,
-    TextSize = 16,
-    Font = Enum.Font.GothamBlack,
-    Visible = false,
-    ZIndex = 20,
+-- MENU HUB
+local hub = make("Frame", {
+    Name = "MenuHub",
+    Size = UDim2.fromOffset(390, 420),
+    Position = UDim2.new(1, -410, 0.5, -210),
+    BackgroundColor3 = BG,
+    BorderSizePixel = 0,
+    Active = true,
 }, gui)
 
-round(floating, 25)
+round(hub, 16)
 
 make("UIStroke", {
-    Color = PINK2,
+    Color = PINK,
     Thickness = 2,
-}, floating)
+}, hub)
 
--- Kéo nút nổi
-do
+local hubTitle = make("Frame", {
+    Size = UDim2.new(1, 0, 0, 48),
+    BackgroundColor3 = BG2,
+    Active = true,
+}, hub)
+
+round(hubTitle, 15)
+
+make("TextLabel", {
+    Size = UDim2.new(1, -105, 1, 0),
+    Position = UDim2.fromOffset(12, 0),
+    BackgroundTransparency = 1,
+    Text = "♡ Nhật Khánh Hub",
+    TextColor3 = WHITE,
+    TextSize = 16,
+    Font = Enum.Font.GothamBold,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, hubTitle)
+
+local hideHub = button(
+    hubTitle, "−",
+    UDim2.new(1, -72, 0, 9),
+    UDim2.fromOffset(29, 29)
+)
+
+local closeHub = button(
+    hubTitle, "×",
+    UDim2.new(1, -37, 0, 9),
+    UDim2.fromOffset(29, 29)
+)
+
+local hubContent = make("ScrollingFrame", {
+    Size = UDim2.new(1, -20, 1, -65),
+    Position = UDim2.fromOffset(10, 57),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    ScrollBarThickness = 3,
+    ScrollBarImageColor3 = PINK,
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+}, hub)
+
+make("UIListLayout", {
+    Padding = UDim.new(0, 8),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+}, hubContent)
+
+local function addHubButton(label, callback)
+    local b = button(
+        hubContent,
+        "   " .. label .. "   ›",
+        UDim2.new(),
+        UDim2.new(1, -5, 0, 43)
+    )
+
+    b.TextXAlignment = Enum.TextXAlignment.Left
+
+    track(b.Activated:Connect(function()
+        if alive then
+            callback()
+        end
+    end))
+
+    return b
+end
+
+-- MENU ĐỒ HỌA
+local shader = make("Frame", {
+    Name = "MenuDoHoa",
+    Size = UDim2.fromOffset(270, 370),
+    Position = UDim2.new(0, 18, 0.5, -185),
+    BackgroundColor3 = BG,
+    BorderSizePixel = 0,
+    Active = true,
+}, gui)
+
+round(shader, 14)
+
+make("UIStroke", {
+    Color = PINK,
+    Thickness = 2,
+}, shader)
+
+local shaderTitle = make("Frame", {
+    Size = UDim2.new(1, 0, 0, 48),
+    BackgroundColor3 = BG2,
+    Active = true,
+}, shader)
+
+round(shaderTitle, 13)
+
+make("TextLabel", {
+    Size = UDim2.new(1, -80, 1, 0),
+    Position = UDim2.fromOffset(12, 0),
+    BackgroundTransparency = 1,
+    Text = "♡ ĐỒ HỌA",
+    TextColor3 = PINK2,
+    TextSize = 15,
+    Font = Enum.Font.GothamBold,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, shaderTitle)
+
+local hideShader = button(
+    shaderTitle, "−",
+    UDim2.new(1, -68, 0, 9),
+    UDim2.fromOffset(29, 29)
+)
+
+local closeShader = button(
+    shaderTitle, "×",
+    UDim2.new(1, -34, 0, 9),
+    UDim2.fromOffset(29, 29)
+)
+
+make("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 24),
+    Position = UDim2.fromOffset(10, 52),
+    BackgroundTransparency = 1,
+    Text = "CHỌN CHẾ ĐỘ ÁNH SÁNG",
+    TextColor3 = MUTED,
+    TextSize = 10,
+    Font = Enum.Font.GothamBold,
+}, shader)
+
+local modes = make("ScrollingFrame", {
+    Size = UDim2.new(1, -18, 1, -88),
+    Position = UDim2.fromOffset(9, 80),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    ScrollBarThickness = 3,
+    ScrollBarImageColor3 = PINK,
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+}, shader)
+
+make("UIListLayout", {
+    Padding = UDim.new(0, 7),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+}, modes)
+
+make("UIPadding", {
+    PaddingBottom = UDim.new(0, 6),
+    PaddingRight = UDim.new(0, 4),
+}, modes)
+
+local presets = {
+    {
+        name = "Ban ngày",
+        time = 14,
+        brightness = 2,
+        ambient = Color3.fromRGB(150, 150, 150),
+        outdoor = Color3.fromRGB(180, 180, 180),
+        fog = Color3.fromRGB(200, 220, 255),
+    },
+    {
+        name = "Hoàng hôn",
+        time = 17.8,
+        brightness = 2,
+        ambient = Color3.fromRGB(150, 100, 100),
+        outdoor = Color3.fromRGB(210, 125, 100),
+        fog = Color3.fromRGB(255, 170, 130),
+    },
+    {
+        name = "Ban đêm",
+        time = 0,
+        brightness = 1,
+        ambient = Color3.fromRGB(45, 50, 90),
+        outdoor = Color3.fromRGB(35, 40, 75),
+        fog = Color3.fromRGB(35, 45, 80),
+    },
+    {
+        name = "Nhiều mây",
+        time = 12,
+        brightness = 1.5,
+        ambient = Color3.fromRGB(125, 125, 135),
+        outdoor = Color3.fromRGB(145, 145, 155),
+        fog = Color3.fromRGB(165, 170, 180),
+    },
+    {
+        name = "Bờ biển",
+        time = 13,
+        brightness = 2,
+        ambient = Color3.fromRGB(130, 175, 190),
+        outdoor = Color3.fromRGB(165, 205, 220),
+        fog = Color3.fromRGB(140, 210, 235),
+    },
+}
+
+local function applyPreset(preset)
+    Lighting.ClockTime = preset.time
+    Lighting.Brightness = preset.brightness
+    Lighting.Ambient = preset.ambient
+    Lighting.OutdoorAmbient = preset.outdoor
+    Lighting.FogColor = preset.fog
+    Lighting.FogEnd = 100000
+end
+
+for _, preset in ipairs(presets) do
+    local b = button(
+        modes,
+        preset.name,
+        UDim2.new(),
+        UDim2.new(1, -5, 0, 43)
+    )
+
+    track(b.Activated:Connect(function()
+        applyPreset(preset)
+
+        for _, child in ipairs(modes:GetChildren()) do
+            if child:IsA("TextButton") then
+                child.BackgroundColor3 = BG2
+                child.TextColor3 = WHITE
+            end
+        end
+
+        b.BackgroundColor3 = PINK
+        b.TextColor3 = BG
+    end))
+end
+
+local restore = button(
+    modes,
+    "Khôi phục mặc định",
+    UDim2.new(),
+    UDim2.new(1, -5, 0, 43)
+)
+
+track(restore.Activated:Connect(function()
+    for key, value in pairs(original) do
+        pcall(function()
+            Lighting[key] = value
+        end)
+    end
+
+    for object, enabled in pairs(originalEffects) do
+        pcall(function()
+            if object.Parent then
+                object.Enabled = enabled
+            end
+        end)
+    end
+
+    for _, child in ipairs(modes:GetChildren()) do
+        if child:IsA("TextButton") then
+            child.BackgroundColor3 = BG2
+            child.TextColor3 = WHITE
+        end
+    end
+end))
+
+-- NÚT NỔI NK
+local floating = button(
+    gui,
+    "NK",
+    UDim2.new(0, 15, 0.5, -25),
+    UDim2.fromOffset(50, 50),
+    PINK
+)
+
+floating.TextColor3 = BG
+floating.TextSize = 17
+floating.Visible = false
+round(floating, 25)
+
+-- HUB BUTTONS
+addHubButton("Hiệu ứng đồ họa", function()
+    shader.Visible = true
+end)
+
+addHubButton("Chili Hub", function()
+    runExternal(CHILI_URL, "Chili Hub")
+end)
+
+addHubButton("Chuyển máy chủ", function()
+    -- Xếp hàng tải lại trước khi gọi script chuyển server.
+    queueReexecute()
+    runExternal(HOP_URL, "Chuyển máy chủ")
+end)
+
+-- ẨN / HIỆN MENU
+local function hideAll()
+    hub.Visible = false
+    shader.Visible = false
+    floating.Visible = true
+end
+
+local function showAll()
+    hub.Visible = true
+    shader.Visible = true
+    floating.Visible = false
+end
+
+track(hideHub.Activated:Connect(hideAll))
+track(hideShader.Activated:Connect(hideAll))
+track(floating.Activated:Connect(showAll))
+
+track(closeHub.Activated:Connect(function()
+    hub.Visible = false
+    if not shader.Visible then
+        floating.Visible = true
+    end
+end))
+
+track(closeShader.Activated:Connect(function()
+    shader.Visible = false
+    if not hub.Visible then
+        floating.Visible = true
+    end
+end))
+
+-- KÉO THẢ MENU
+local function makeDraggable(frame, handle)
     local dragging = false
-    local moved = false
-    local dragStart
     local startPosition
+    local startPointer
 
-    track(floating.InputBegan:Connect(function(input)
+    track(handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
-            moved = false
-            dragStart = input.Position
-            startPosition = floating.Position
-
-            local connection
-            connection = input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                    connection:Disconnect()
-                end
-            end)
+            startPosition = frame.Position
+            startPointer = input.Position
         end
     end))
 
@@ -632,13 +512,9 @@ do
             input.UserInputType == Enum.UserInputType.MouseMovement
             or input.UserInputType == Enum.UserInputType.Touch
         ) then
-            local delta = input.Position - dragStart
+            local delta = input.Position - startPointer
 
-            if delta.Magnitude > 6 then
-                moved = true
-            end
-
-            floating.Position = UDim2.new(
+            frame.Position = UDim2.new(
                 startPosition.X.Scale,
                 startPosition.X.Offset + delta.X,
                 startPosition.Y.Scale,
@@ -647,32 +523,23 @@ do
         end
     end))
 
-    track(floating.Activated:Connect(function()
-        if moved then return end
-
-        floating.Visible = false
-        main.Visible = true
-
-        local nw, nh = getSize()
-        animate(main, QUICK, {
-            Size = UDim2.new(0, nw, 0, nh),
-            Position = UDim2.new(
-                0.5, -nw / 2,
-                0.5, -nh / 2
-            ),
-        })
+    track(UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
     end))
 end
 
---==================== THU NHỎ / ĐÓNG ====================
+makeDraggable(hub, hubTitle)
+makeDraggable(shader, shaderTitle)
 
-track(minButton.Activated:Connect(function()
-    main.Visible = false
-    floating.Visible = true
-end))
-
+-- DỌN KẾT NỐI
 local function unload()
-    for _, connection in ipairs(Connections) do
+    if not alive then return end
+    alive = false
+
+    for _, connection in ipairs(connections) do
         pcall(function()
             connection:Disconnect()
         end)
@@ -682,34 +549,12 @@ local function unload()
         gui:Destroy()
     end)
 
-    ENV.NhatKhanhHubUnload = nil
+    ENV.NK_PinkShader_Unload = nil
 end
 
-track(closeButton.Activated:Connect(function()
-    unload()
-end))
+track(closeHub.Activated:Connect(unload))
+track(closeShader.Activated:Connect(unload))
 
--- Hiệu ứng viền hồng nhẹ
-task.spawn(function()
-    while gui.Parent do
-        animate(mainStroke, TweenInfo.new(1.2), {
-            Color = PINK2
-        })
-        task.wait(1.2)
+ENV.NK_PinkShader_Unload = unload
 
-        if not gui.Parent then break end
-
-        animate(mainStroke, TweenInfo.new(1.2), {
-            Color = PINK
-        })
-        task.wait(1.2)
-    end
-end)
-
-ENV.NhatKhanhHubUnload = unload
-
-notify(
-    "Nhật Khánh Hub",
-    "Giao diện đã khởi chạy!",
-    3
-)
+print("[Nhật Khánh Hub] Đã khởi chạy.")
